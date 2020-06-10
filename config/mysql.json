@@ -1,0 +1,14 @@
+{
+    "InitCap":  3,
+    "MaxCap" :  10,
+    "ClientTimeOut" :	5,
+    "CheckClientAliveInterval" : 3600,
+    "KeepClientTime" :	6,
+    
+    "Host" :	"127.0.0.1",
+    "Port" :	3306,
+    "Username" : "myMysql",
+    "Passwd" :	"myMysql@XHXHX22",
+    "DBName" : "blog",
+    "Prifex" : "blog_"
+}
