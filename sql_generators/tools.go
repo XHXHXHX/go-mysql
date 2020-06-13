@@ -1,4 +1,4 @@
-package generators
+package sql_generators
 
 import (
 	"strconv"

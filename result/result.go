@@ -1,4 +1,4 @@
-package mysqlResult
+package result
 
 /*
  * 韦钊大佬写的

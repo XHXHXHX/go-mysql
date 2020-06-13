@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	mysqlPool "go-mysql/pool"
-	mysqlResult "go-mysql/result"
-	generators "go-mysql/sql-generators"
+	"go-mysql/pool"
+	"go-mysql/result"
+	"go-mysql/sql_generators"
 	"strconv"
 )
 
@@ -16,7 +16,7 @@ const DEFAULT_CONFIG = "config/mysql.json"
  * Manager
  */
 type Manager struct {
-	generator *generators.SqlGenerator
+	generator *sql_generators.SqlGenerator
 	client    *sql.DB
 	tx        *sql.Tx
 	model     interface{}
@@ -27,7 +27,7 @@ func InitConfig(config string) error {
 	if len(config) == 0 {
 		config = DEFAULT_CONFIG
 	}
-	err := mysqlPool.InitPool(config)
+	err := pool.InitPool(config)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (manage *Manager) BindModels(ptr []interface{}) *Manager {
 }
 
 func DbBegin() *Manager {
-	client, err := mysqlPool.GetClient()
+	client, err := pool.GetClient()
 	if err != nil {
 		panic(err)
 	}
@@ -58,7 +58,7 @@ func DbBegin() *Manager {
 		panic(err)
 	}
 	return &Manager{
-		generator: generators.NewGenerator(),
+		generator: sql_generators.NewGenerator(),
 		client:    client,
 		tx:        tx,
 	}
@@ -71,7 +71,7 @@ func (manage *Manager) DbCommit() error {
 	if err := manage.tx.Commit(); err != nil {
 		return err
 	}
-	err := mysqlPool.CloseClient(manage.client)
+	err := pool.CloseClient(manage.client)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (manage *Manager) DbRollBack() error {
 	if err != sql.ErrTxDone && err != nil {
 		return err
 	}
-	err = mysqlPool.CloseClient(manage.client)
+	err = pool.CloseClient(manage.client)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (manage *Manager) Delete() (int, error) {
 	return manage.exec(false)
 }
 
-func (manage *Manager) Get(args ...string) (*mysqlResult.Result, error) {
+func (manage *Manager) Get(args ...string) (*result.Result, error) {
 	manage.generator.Get(args...)
 	return manage.query()
 }
@@ -226,7 +226,7 @@ func (manage *Manager) Sum(field string) (int, error) {
 	return manage.singleFuncField(res, "max")
 }
 
-func (manage *Manager) singleFuncField(res *mysqlResult.Result, field string) (int, error) {
+func (manage *Manager) singleFuncField(res *result.Result, field string) (int, error) {
 	if val, ok := res.Set[0]["count"].(string); ok {
 		v, _ := strconv.Atoi(val)
 		return v, nil
@@ -247,13 +247,13 @@ func (manage *Manager) DoesntExists() {
 	manage.generator.DoesntExists()
 }
 
-func (manage *Manager) query() (*mysqlResult.Result, error) {
+func (manage *Manager) query() (*result.Result, error) {
 	var rows *sql.Rows
 	var err error
 	if manage.tx != nil {
 		rows, err = manage.tx.Query(manage.generator.ExeSql, manage.generator.ExeParam...)
 	} else {
-		client, err := mysqlPool.GetClient()
+		client, err := pool.GetClient()
 		if err != nil {
 			return nil, err
 		}
@@ -263,14 +263,14 @@ func (manage *Manager) query() (*mysqlResult.Result, error) {
 		}
 		defer stmt.Close()
 		rows, err = stmt.Query(manage.generator.ExeParam...)
-		defer mysqlPool.CloseClient(client)
+		defer pool.CloseClient(client)
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	m := new(mysqlResult.Result)
+	m := new(result.Result)
 	m.Rows = rows
 	m.MakeResult()
 
@@ -283,7 +283,7 @@ func (manage *Manager) exec(InsertId bool) (int, error) {
 	if manage.tx != nil {
 		ret, err = manage.tx.Exec(manage.generator.ExeSql, manage.generator.ExeParam...)
 	} else {
-		client, err := mysqlPool.GetClient()
+		client, err := pool.GetClient()
 		if err != nil {
 			return 0, err
 		}
@@ -293,7 +293,7 @@ func (manage *Manager) exec(InsertId bool) (int, error) {
 		}
 		defer stmt.Close()
 		ret, err = stmt.Exec(manage.generator.ExeParam...)
-		defer mysqlPool.CloseClient(client)
+		defer pool.CloseClient(client)
 	}
 
 	if err != nil {

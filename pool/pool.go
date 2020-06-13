@@ -1,4 +1,4 @@
-package mysqlPool
+package pool
 
 import (
 	_ "github.com/go-sql-driver/mysql"
