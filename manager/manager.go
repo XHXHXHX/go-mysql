@@ -10,6 +10,8 @@ import (
 	"strconv"
 )
 
+const DEFAULT_CONFIG = "config/mysql.json"
+
 /*
  * Manager
  */
@@ -21,8 +23,11 @@ type Manager struct {
 	models    []interface{}
 }
 
-func InitConfig() error {
-	err := mysqlPool.InitPool("config/mysql.json")
+func InitConfig(config string) error {
+	if len(config) == 0 {
+		config = DEFAULT_CONFIG
+	}
+	err := mysqlPool.InitPool(config)
 	if err != nil {
 		return err
 	}
