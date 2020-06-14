@@ -12,6 +12,9 @@ import (
 type Result struct {
 	*sql.Rows
 	Set []map[string]interface{}
+	LastInsertId int64
+	RowsAffected int64
+	FuncResult int			// 功能函数如 sum, count, max 的值
 }
 
 func (r *Result) MapResult(ptr interface{}) {
@@ -65,7 +68,7 @@ func (r *Result) MapResults(ptr interface{}) {
 }
 
 func (r *Result) GetColumnValue(fieldName string, value interface{}, MessageRowMap map[string]interface{}) map[string]interface{} {
-	// fmt.Printf("%v %s %s", value, value, reflect.TypeOf(value))
+	//fmt.Printf("%v %s %s, ", fieldName, value, reflect.TypeOf(value))
 	switch v := value.(type) {
 	case int:
 		MessageRowMap[fieldName] = int64(v)
@@ -103,6 +106,8 @@ func (r *Result) GetColumnValue(fieldName string, value interface{}, MessageRowM
 		MessageRowMap[fieldName] = nil
 	}
 
+	//fmt.Printf("%T", MessageRowMap[fieldName])
+	//fmt.Println()
 	return MessageRowMap
 }
 
@@ -126,11 +131,11 @@ func (r *Result) MakeResult() {
 		_ = r.Rows.Scan(valueCollect...)
 		for i, name := range columns {
 			tmp = r.GetColumnValue(name, values[i], tmp)
-			tmp[name] = values[i]
+			//tmp[name] = values[i]
 		}
+		//fmt.Println(fmt.Sprintf("%T", tmp["user_name"]))
 
 		r.Set = append(r.Set, tmp)
 	}
-
 	return
 }

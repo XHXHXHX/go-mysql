@@ -69,17 +69,17 @@ func TestSqlGenerator_WhereDate(t *testing.T) {
 }
 
 func TestSqlGenerator_WhereMonth(t *testing.T) {
-	result := DB().Table("goods").WhereMonth("add_time", "10").Get()
+	result := DB().Table("goods").WhereMonth("add_time", 10).Get()
 	myPrintln("WhereMonth", result.ShowSql)
 }
 
 func TestSqlGenerator_WhereDay(t *testing.T) {
-	result := DB().Table("goods").WhereDay("add_time", "31").Get()
+	result := DB().Table("goods").WhereDay("add_time", 31).Get()
 	myPrintln("WhereDay", result.ShowSql)
 }
 
 func TestSqlGenerator_WhereYear(t *testing.T) {
-	result := DB().Table("goods").WhereYear("add_time", "2020").Get()
+	result := DB().Table("goods").WhereYear("add_time", 2020).Get()
 	myPrintln("WhereYear", result.ShowSql)
 }
 

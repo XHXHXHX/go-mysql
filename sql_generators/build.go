@@ -94,6 +94,15 @@ func (this *SqlGenerator) whereResult(result *whereInfo, err error) *SqlGenerato
 	return this
 }
 
+func (this *SqlGenerator) havingResult(result *whereInfo, err error) *SqlGenerator {
+	if err != nil {
+		panic(err)
+	}
+
+	this.sqlPart.setHaving(result)
+	return this
+}
+
 func (this *SqlGenerator) Table(args... string) *SqlGenerator {
 	if len(args) == 0 {
 		panic("Table param error")
@@ -207,7 +216,7 @@ func (this *SqlGenerator) JoinFunc(table string, callback func(build *SqlGenerat
 
 func (this *SqlGenerator) Where(args... interface{}) *SqlGenerator {
 	if len(args) == 0 {
-		panic("Where param error")
+		return this
 	}
 	args = append(args, 1)
 	return this.whereResult( whereFactory.Where(FormatWhereParam(args...)...))
@@ -347,43 +356,43 @@ func (this *SqlGenerator) OrWhereDate(field, date string) *SqlGenerator {
 	return this.whereResult( whereFactory.WhereDate(field, date, true))
 }
 
-func (this *SqlGenerator) WhereMonth(field, month string) *SqlGenerator {
-	if len(field) == 0 || len(month) == 0 {
+func (this *SqlGenerator) WhereMonth(field string, month int) *SqlGenerator {
+	if len(field) == 0 || month == 0 {
 		panic("WhereMonth param error")
 	}
 	return this.whereResult( whereFactory.WhereMonth(field, month, false))
 }
 
-func (this *SqlGenerator) OrWhereMonth(field, month string) *SqlGenerator {
-	if len(field) == 0 || len(month) == 0 {
+func (this *SqlGenerator) OrWhereMonth(field string, month int) *SqlGenerator {
+	if len(field) == 0 || month == 0 {
 		panic("WhereMonth param error")
 	}
 	return this.whereResult( whereFactory.WhereMonth(field, month, true))
 }
 
-func (this *SqlGenerator) WhereDay(field, day string) *SqlGenerator {
-	if len(field) == 0 || len(day) == 0 {
+func (this *SqlGenerator) WhereDay(field string, day int) *SqlGenerator {
+	if len(field) == 0 || day == 0 {
 		panic("WhereDay param error")
 	}
 	return this.whereResult( whereFactory.WhereDay(field, day, false))
 }
 
-func (this *SqlGenerator) OrWhereDay(field, day string) *SqlGenerator {
-	if len(field) == 0 || len(day) == 0 {
+func (this *SqlGenerator) OrWhereDay(field string, day int) *SqlGenerator {
+	if len(field) == 0 || day == 0 {
 		panic("WhereDay param error")
 	}
 	return this.whereResult( whereFactory.WhereDay(field, day, true))
 }
 
-func (this *SqlGenerator) WhereYear(field, year string) *SqlGenerator {
-	if len(field) == 0 || len(year) == 0 {
+func (this *SqlGenerator) WhereYear(field string, year int) *SqlGenerator {
+	if len(field) == 0 || year == 0 {
 		panic("whereYear param error")
 	}
 	return this.whereResult( whereFactory.whereYear(field, year, false))
 }
 
-func (this *SqlGenerator) OrWhereYear(field, year string) *SqlGenerator {
-	if len(field) == 0 || len(year) == 0 {
+func (this *SqlGenerator) OrWhereYear(field string, year int) *SqlGenerator {
+	if len(field) == 0 || year == 0 {
 		panic("whereYear param error")
 	}
 	return this.whereResult( whereFactory.whereYear(field, year, true))
@@ -506,18 +515,20 @@ func (this *SqlGenerator) GroupByRaw(sql string) *SqlGenerator {
 	return this
 }
 
+// TODO BUG SELECT中存在别名字段时无法识别表名加字段名
 func (this *SqlGenerator) Having(args... interface{}) *SqlGenerator {
 	if len(args) == 0 {
 		panic("Having param error")
 	}
-	return this.whereResult( whereFactory.Where(args...))
+	args = append(args, 1)
+	return this.havingResult( whereFactory.Where(FormatWhereParam(args...)...))
 }
 
 func (this *SqlGenerator) HavingRaw(sql string) *SqlGenerator {
 	if len(sql) == 0 {
 		panic("HavingRaw param error")
 	}
-	return this.whereResult( whereFactory.WhereRaw(sql, false))
+	return this.havingResult( whereFactory.WhereRaw(sql, false))
 }
 
 func (this *SqlGenerator) Offset(num int) *SqlGenerator {

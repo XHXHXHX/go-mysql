@@ -16,11 +16,10 @@ const DEFAULT_CONFIG = "config/mysql.json"
  * Manager
  */
 type Manager struct {
-	generator *sql_generators.SqlGenerator
+	Generator *sql_generators.SqlGenerator
 	client    *sql.DB
 	tx        *sql.Tx
-	model     interface{}
-	models    []interface{}
+	*result.Result
 }
 
 func InitConfig(config string) error {
@@ -35,17 +34,7 @@ func InitConfig(config string) error {
 }
 
 func DB() *Manager {
-	return &Manager{}
-}
-
-func (manage *Manager) BindModel(ptr interface{}) *Manager {
-	manage.model = ptr
-	return manage
-}
-
-func (manage *Manager) BindModels(ptr []interface{}) *Manager {
-	manage.models = ptr
-	return manage
+	return &Manager{Generator: sql_generators.DB()}
 }
 
 func DbBegin() *Manager {
@@ -58,7 +47,7 @@ func DbBegin() *Manager {
 		panic(err)
 	}
 	return &Manager{
-		generator: sql_generators.NewGenerator(),
+		Generator: sql_generators.NewGenerator(),
 		client:    client,
 		tx:        tx,
 	}
@@ -97,41 +86,44 @@ func (manage *Manager) DbRollBack() error {
 	return nil
 }
 
-func (manage *Manager) LastInsertId(data map[string]interface{}) (int, error) {
-	manage.generator.Insert(data)
+func (manage *Manager) LastInsertId(data map[string]interface{}) (*Manager, error) {
+	manage.Generator.Insert(data)
 	return manage.exec(true)
 }
 
-func (manage *Manager) Insert(data map[string]interface{}) (int, error) {
-	manage.generator.Insert(data)
+func (manage *Manager) Insert(data map[string]interface{}) (*Manager, error) {
+	manage.Generator.Insert(data)
 	return manage.exec(false)
 }
 
-func (manage *Manager) MultiInsert(data []map[string]interface{}) (int, error) {
-	manage.generator.MultiInsert(data)
+func (manage *Manager) MultiInsert(data []map[string]interface{}) (*Manager, error) {
+	manage.Generator.MultiInsert(data)
 	return manage.exec(false)
 }
 
-func (manage *Manager) Update(data map[string]interface{}) (int, error) {
-	manage.generator.Update(data)
+func (manage *Manager) Update(data map[string]interface{}) (*Manager, error) {
+	manage.Generator.Update(data)
 	return manage.exec(false)
 }
 
-func (manage *Manager) Delete() (int, error) {
-	manage.generator.Delete()
+func (manage *Manager) Delete() (*Manager, error) {
+	manage.Generator.Delete()
 	return manage.exec(false)
 }
 
-func (manage *Manager) Get(args ...string) (*result.Result, error) {
-	manage.generator.Get(args...)
+func (manage *Manager) Get(args ...string) (*Manager, error) {
+	manage.Generator.Get(args...)
 	return manage.query()
 }
 
 func (manage *Manager) Value(field string) (interface{}, error) {
-	manage.generator.Value(field)
+	manage.Generator.Value(field)
 	res, err := manage.query()
-	if err != nil || len(res.Set) == 0 {
-		return nil, err
+	if err != nil {
+		return nil, errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
+	}
+	if len(res.Set) == 0 {
+		return nil, nil
 	}
 	if val, ok := res.Set[0][field]; ok {
 		return val, nil
@@ -140,19 +132,25 @@ func (manage *Manager) Value(field string) (interface{}, error) {
 }
 
 func (manage *Manager) First() (map[string]interface{}, error) {
-	manage.generator.First()
+	manage.Generator.First()
 	res, err := manage.query()
-	if err != nil || len(res.Set) == 0 {
-		return nil, err
+	if err != nil {
+		return nil, errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
+	}
+	if len(res.Set) == 0 {
+		return nil, nil
 	}
 	return res.Set[0], nil
 }
 
-func (manage *Manager) FirstModel(model interface{}) error {
-	manage.generator.First()
+func (manage *Manager) Model(model interface{}) error {
+	manage.Generator.First()
 	res, err := manage.query()
-	if err != nil || len(res.Set) == 0 {
-		return err
+	if err != nil {
+		return errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
+	}
+	if len(res.Set) == 0 {
+		return nil
 	}
 
 	res.MapResult(&model)
@@ -160,11 +158,29 @@ func (manage *Manager) FirstModel(model interface{}) error {
 	return nil
 }
 
-func (manage *Manager) PluckArray(field string) ([]interface{}, error) {
-	manage.generator.PluckArray(field)
+func (manage *Manager) Models(model interface{}) error {
+	manage.Generator.Get()
 	res, err := manage.query()
-	if err != nil || len(res.Set) == 0 {
-		return nil, err
+	if err != nil {
+		return errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
+	}
+	if len(res.Set) == 0 {
+		return nil
+	}
+
+	res.MapResults(&model)
+
+	return nil
+}
+
+func (manage *Manager) PluckArray(field string) ([]interface{}, error) {
+	manage.Generator.PluckArray(field)
+	res, err := manage.query()
+	if err != nil {
+		return nil, errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
+	}
+	if len(res.Set) == 0 {
+		return []interface{}{}, nil
 	}
 	var data []interface{}
 	for _, item := range res.Set {
@@ -178,16 +194,19 @@ func (manage *Manager) PluckArray(field string) ([]interface{}, error) {
 }
 
 func (manage *Manager) PluckMap(field, value string) (map[string]interface{}, error) {
-	manage.generator.PluckMap(field, value)
+	manage.Generator.PluckMap(field, value)
 	res, err := manage.query()
-	if err != nil || len(res.Set) == 0 {
-		return nil, err
+	if err != nil {
+		return nil, errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
+	}
+	if len(res.Set) == 0 {
+		return map[string]interface{}{}, nil
 	}
 	var data = make(map[string]interface{})
 	for _, item := range res.Set {
-		val, ok := item[field]
+		val, ok := item[value]
 		if !ok {
-			return nil, errors.New("no this field : " + field)
+			return nil, errors.New("no this field : " + value)
 		}
 		data[fmt.Sprintf("%v", item[field])] = val
 	}
@@ -196,181 +215,207 @@ func (manage *Manager) PluckMap(field, value string) (map[string]interface{}, er
 
 // Todo Chunk
 func (manage *Manager) Chunk(num int, callback func()) {
-	manage.generator.Chunk(num, callback)
+	manage.Generator.Chunk(num, callback)
 }
 
-func (manage *Manager) Count() (int, error) {
-	manage.generator.Count()
+func (manage *Manager) Count() (*Manager, error) {
+	manage.Generator.Count()
 	res, err := manage.query()
-	if err != nil || len(res.Set) == 0 {
-		return 0, err
+	if err != nil {
+		return nil, errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
 	}
-	return manage.singleFuncField(res, "count")
+	if len(res.Set) == 0 {
+		return nil, nil
+	}
+	err = manage.singleFuncField(res.Result, "count")
+	if err != nil {
+		return nil, err
+	}
+	return manage, nil
 }
 
-func (manage *Manager) Max(field string) (int, error) {
-	manage.generator.Max(field)
+func (manage *Manager) Max(field string) (*Manager, error) {
+	manage.Generator.Max(field)
 	res, err := manage.query()
-	if err != nil || len(res.Set) == 0 {
-		return 0, err
+	if err != nil {
+		return nil, errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
 	}
-	return manage.singleFuncField(res, "max")
+	if len(res.Set) == 0 {
+		return nil, nil
+	}
+	err = manage.singleFuncField(res.Result, "max")
+	if err != nil {
+		return nil, err
+	}
+	return manage, nil
 }
 
-func (manage *Manager) Sum(field string) (int, error) {
-	manage.generator.Sum(field)
+func (manage *Manager) Sum(field string) (*Manager, error) {
+	manage.Generator.Sum(field)
 	res, err := manage.query()
-	if err != nil || len(res.Set) == 0 {
-		return 0, err
+	if err != nil {
+		return nil, errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
 	}
-	return manage.singleFuncField(res, "max")
+	if len(res.Set) == 0 {
+		return nil, nil
+	}
+	err = manage.singleFuncField(res.Result, "sum")
+	if err != nil {
+		return nil, err
+	}
+	return manage, nil
 }
 
-func (manage *Manager) singleFuncField(res *result.Result, field string) (int, error) {
-	if val, ok := res.Set[0]["count"].(string); ok {
+func (manage *Manager) singleFuncField(res *result.Result, field string) (error) {
+	if val, ok := res.Set[0][field].(string); ok {
 		v, _ := strconv.Atoi(val)
-		return v, nil
+		res.FuncResult = v
+		return nil
 	}
 
-	val := fmt.Sprintf("%v", res.Set[0]["count"])
+	val := fmt.Sprintf("%v", res.Set[0][field])
 	v, _ := strconv.Atoi(val)
-	return v, nil
+	res.FuncResult = v
+	return nil
 }
 
 // Todo Exists
 func (manage *Manager) Exists() {
-	manage.generator.Exists()
+	manage.Generator.Exists()
 }
 
 // Todo DoesntExists
 func (manage *Manager) DoesntExists() {
-	manage.generator.DoesntExists()
+	manage.Generator.DoesntExists()
 }
 
-func (manage *Manager) query() (*result.Result, error) {
+func (manage *Manager) query() (*Manager, error) {
 	var rows *sql.Rows
 	var err error
 	if manage.tx != nil {
-		rows, err = manage.tx.Query(manage.generator.ExeSql, manage.generator.ExeParam...)
+		rows, err = manage.tx.Query(manage.Generator.ExeSql, manage.Generator.ExeParam...)
 	} else {
 		client, err := pool.GetClient()
 		if err != nil {
-			return nil, err
+			return manage, err
 		}
-		stmt, err := client.Prepare(manage.generator.ExeSql)
+		stmt, err := client.Prepare(manage.Generator.ExeSql)
 		if err != nil {
-			return nil, err
+			return manage, err
 		}
 		defer stmt.Close()
-		rows, err = stmt.Query(manage.generator.ExeParam...)
+		rows, err = stmt.Query(manage.Generator.ExeParam...)
 		defer pool.CloseClient(client)
 	}
 
 	if err != nil {
-		return nil, err
+		return manage, errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
 	}
 
-	m := new(result.Result)
-	m.Rows = rows
-	m.MakeResult()
+	manage.Result = new(result.Result)
+	manage.Result.Rows = rows
+	if rows != nil {
+		manage.Result.MakeResult()
+	}
 
-	return m, nil
+	return manage, nil
 }
 
-func (manage *Manager) exec(InsertId bool) (int, error) {
+func (manage *Manager) exec(InsertId bool) (*Manager, error) {
 	var ret sql.Result
 	var err error
 	if manage.tx != nil {
-		ret, err = manage.tx.Exec(manage.generator.ExeSql, manage.generator.ExeParam...)
+		ret, err = manage.tx.Exec(manage.Generator.ExeSql, manage.Generator.ExeParam...)
 	} else {
 		client, err := pool.GetClient()
 		if err != nil {
-			return 0, err
+			return manage, err
 		}
-		stmt, err := client.Prepare(manage.generator.ExeSql)
+		stmt, err := client.Prepare(manage.Generator.ExeSql)
 		if err != nil {
-			return 0, err
+			return manage, err
 		}
 		defer stmt.Close()
-		ret, err = stmt.Exec(manage.generator.ExeParam...)
+		ret, err = stmt.Exec(manage.Generator.ExeParam...)
 		defer pool.CloseClient(client)
 	}
 
 	if err != nil {
-		return 0, err
+		return manage, errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
 	}
 
-	var num int64
+	manage.Result = new(result.Result)
+
 	if InsertId {
-		num, err = ret.LastInsertId()
+		manage.Result.LastInsertId, err = ret.LastInsertId()
 	} else {
-		num, err = ret.RowsAffected()
+		manage.Result.RowsAffected, err = ret.RowsAffected()
 	}
 	if err != nil {
-		return 0, err
+		return manage, err
 	}
 
-	return int(num), nil
+	return manage, nil
 }
 
 func (manage *Manager) LastInsertIdToSql(data map[string]interface{}) string {
-	manage.generator.Insert(data)
-	return manage.generator.ShowSql
+	manage.Generator.Insert(data)
+	return manage.Generator.ShowSql
 }
 
 func (manage *Manager) InsertToSql(data map[string]interface{}) string {
-	manage.generator.Insert(data)
-	return manage.generator.ShowSql
+	manage.Generator.Insert(data)
+	return manage.Generator.ShowSql
 }
 
 func (manage *Manager) MultiInsertToSql(data []map[string]interface{}) string {
-	manage.generator.MultiInsert(data)
-	return manage.generator.ShowSql
+	manage.Generator.MultiInsert(data)
+	return manage.Generator.ShowSql
 }
 
 func (manage *Manager) UpdateToSql(data map[string]interface{}) string {
-	manage.generator.Update(data)
-	return manage.generator.ShowSql
+	manage.Generator.Update(data)
+	return manage.Generator.ShowSql
 }
 
 func (manage *Manager) DeleteToSql() string {
-	manage.generator.Delete()
-	return manage.generator.ShowSql
+	manage.Generator.Delete()
+	return manage.Generator.ShowSql
 }
 func (manage *Manager) GetToSql(args ...string) string {
-	manage.generator.Get(args...)
-	return manage.generator.ShowSql
+	manage.Generator.Get(args...)
+	return manage.Generator.ShowSql
 }
 func (manage *Manager) ValueToSql(field string) string {
-	manage.generator.Value(field)
-	return manage.generator.ShowSql
+	manage.Generator.Value(field)
+	return manage.Generator.ShowSql
 }
 func (manage *Manager) FirstToSql(args ...string) string {
-	manage.generator.First()
-	return manage.generator.ShowSql
+	manage.Generator.First()
+	return manage.Generator.ShowSql
 }
 func (manage *Manager) PluckArrayToSql(field string) string {
-	manage.generator.PluckArray(field)
-	return manage.generator.ShowSql
+	manage.Generator.PluckArray(field)
+	return manage.Generator.ShowSql
 }
 func (manage *Manager) PluckMapToSql(field, value string) string {
-	manage.generator.PluckMap(field, value)
-	return manage.generator.ShowSql
+	manage.Generator.PluckMap(field, value)
+	return manage.Generator.ShowSql
 }
 func (manage *Manager) CountToSql() string {
-	manage.generator.Count()
-	return manage.generator.ShowSql
+	manage.Generator.Count()
+	return manage.Generator.ShowSql
 }
 func (manage *Manager) MaxToSql(field string) string {
-	manage.generator.Max(field)
-	return manage.generator.ShowSql
+	manage.Generator.Max(field)
+	return manage.Generator.ShowSql
 }
 func (manage *Manager) SumToSql(field string) string {
-	manage.generator.Sum(field)
-	return manage.generator.ShowSql
+	manage.Generator.Sum(field)
+	return manage.Generator.ShowSql
 }
 func (manage *Manager) ChunkToSql(num int) string {
-	manage.generator.Limit(num)
-	manage.generator.Get()
-	return manage.generator.ShowSql
+	manage.Generator.Limit(num)
+	manage.Generator.Get()
+	return manage.Generator.ShowSql
 }

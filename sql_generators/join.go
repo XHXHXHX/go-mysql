@@ -7,9 +7,9 @@ import (
 type joinInfo struct {
 	buildInfo *SqlGenerator
 	joinType string
-	thisRelationField string
+	thisRelationField string		// Join 的表
 	relationCondition string
-	thatRelationField string
+	thatRelationField string		// 默认主表
 }
 
 func (this *joinInfo) JoinOn(thatRelationField, relationCondition, thisRelationField string) {

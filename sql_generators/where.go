@@ -149,24 +149,24 @@ func (this *whereInfo) WhereNotNull(field string, boolean bool) (*whereInfo, err
 	return newWhere("Null","GIS NOT", field, "NULL", boolean)
 }
 
-func (this *whereInfo) WhereDate(field, date string, boolean bool) (*whereInfo, error) {
+func (this *whereInfo) WhereDate(field string, date string, boolean bool) (*whereInfo, error) {
 	char := GetDateStringJoiner(date)
 	format := SetMysqlDateFormatByChar(char)
 	func_field := "DATE_FORMAT(" + field + ", '" + format + "')"
 	return newWhere("Func", "=", func_field, date, boolean)
 }
 
-func (this *whereInfo) WhereMonth(field, month string, boolean bool) (*whereInfo, error) {
-	func_field := "'DATE_FORMAT(" + field + ", '%m')'"
+func (this *whereInfo) WhereMonth(field string, month int, boolean bool) (*whereInfo, error) {
+	func_field := "DATE_FORMAT(" + field + ", '%m')"
 	return newWhere("Func","=", func_field, month, boolean)
 }
 
-func (this *whereInfo) WhereDay(field, day string, boolean bool) (*whereInfo, error) {
+func (this *whereInfo) WhereDay(field string, day int, boolean bool) (*whereInfo, error) {
 	func_field := "DATE_FORMAT(" + field + ", '%d')"
 	return newWhere("Func","=", func_field, day, boolean)
 }
 
-func (this *whereInfo) whereYear(field, year string, boolean bool) (*whereInfo, error) {
+func (this *whereInfo) whereYear(field string, year int, boolean bool) (*whereInfo, error) {
 	func_field := "DATE_FORMAT(" + field + ", '%Y')"
 	return newWhere("Func","=", func_field, year, boolean)
 }

@@ -32,7 +32,7 @@ func (this *sqlInfo) setTable(table, alias string) {
 	}
 }
 
-func (this *sqlInfo) setJoin(buildInfo *SqlGenerator, joinType, thisRelationField, relationCondition, thatRelationField string) {
+func (this *sqlInfo) setJoin(buildInfo *SqlGenerator, joinType, thatRelationField, relationCondition, thisRelationField string) {
 	joinData := &joinInfo{
 		buildInfo: buildInfo,
 		joinType: joinType,
@@ -45,6 +45,10 @@ func (this *sqlInfo) setJoin(buildInfo *SqlGenerator, joinType, thisRelationFiel
 
 func (this *sqlInfo) setWhere(whereData *whereInfo) {
 	this.whereData = append(this.whereData, whereData)
+}
+
+func (this *sqlInfo) setHaving(whereData *whereInfo) {
+	this.havingData = append(this.havingData, whereData)
 }
 
 func (this *sqlInfo) BuildInsert() (string, []interface{}) {
@@ -190,8 +194,9 @@ func (this *sqlInfo) makeJoinString(data *joinInfo) string {
 	s = append(s, strings.ToUpper(data.joinType))
 	s = append(s, data.buildInfo.sqlPart.BuildTable(true))
 	if len(data.thisRelationField) > 0 {
-		thatRelationField := data.buildInfo.sqlPart.addTablePrefixForField(data.thatRelationField)
-		thisRelationField := this.addTablePrefixForField(data.thisRelationField)
+		thisRelationField := data.buildInfo.sqlPart.addTablePrefixForField(data.thisRelationField)
+		thatRelationField := this.addTablePrefixForField(data.thatRelationField)
+
 		s = append(s, strings.Join([]string{"ON", thatRelationField, data.relationCondition, thisRelationField}, " "))
 	}
 	if len(data.buildInfo.sqlPart.whereData) > 0 {
@@ -296,8 +301,8 @@ func (this *sqlInfo) FuncWhere(data *whereInfo) string {
 	sql = append(sql, data.field)
 	sql = append(sql, data.conditionType)
 	sql = append(sql, "?")
-	value, _ := data.value.(string)
-	this.preproParam = append(this.preproParam, value)
+
+	this.preproParam = append(this.preproParam, data.value)
 
 	return strings.Join(sql, " ")
 }
