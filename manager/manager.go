@@ -86,7 +86,7 @@ func (manage *Manager) DbRollBack() error {
 	return nil
 }
 
-func (manage *Manager) LastInsertId(data map[string]interface{}) (*Manager, error) {
+func (manage *Manager) GetLastInsertId(data map[string]interface{}) (*Manager, error) {
 	manage.Generator.Insert(data)
 	return manage.exec(true)
 }
