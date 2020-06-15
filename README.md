@@ -1,24 +1,19 @@
 ### Go-Mysql
 ---
-one of the Mysql ORM for Golang, it consists of simple client pool, simple Mysql results and simple generators of sql as similar as `Laravel` DB. 
-
-The three parts could work independently, it's fixible.
+由链接池/结果集/sql生成器组成 `Laravel` 风格的ORM，每个部分都可以独立使用。
     
     
-    
-### Installation
+### 安装
 ---
-Simple install the package to you `$GOPATH` with `go tool` from shell:
-    
+
     $ go get github.com/XHXHXHX/go-mysql
     
-Make sure Git is installed on your machine and in your system's `PATH`
 
-### Usage
+### 使用
 ---
 
         
-- simple select
+- 简易查询
 
         import _ "github.com/XHXHXHX/go-mysql"
     
@@ -28,7 +23,7 @@ Make sure Git is installed on your machine and in your system's `PATH`
         res, err := DB().Table("user").Where("age", ">", 0).OrderBy("age").GroupBy("id").Offset(0).Limit(10).Get()
         ......
         
-- complex query
+- 稍微复杂的查询
 
         res, err = DB().Table("user", "u").WhenElse(res == nil, func(build *sql_generators.SqlGenerator) *sql_generators.SqlGenerator {
             return build.JoinFunc("class", func(build *sql_generators.SqlGenerator) *sql_generators.SqlGenerator {
@@ -39,18 +34,18 @@ Make sure Git is installed on your machine and in your system's `PATH`
         }).Get()
         
         
-- show sql for execute
+- 执行后查看执行sql
 
         res, err := DB().Table("user").Where("age", ">", 0).OrderBy("age").GroupBy("id").Offset(0).Limit(10).Get()
         fmt.Println(res.Generator.ShowSql)
         
-- query result for struct
+- 也可以将查询结果绑定到 `struct`中
 
         DB().Table("user").Model(model interface{}) error
         DB().Table("user").Models(model interface{}) error
         
         
-- Result struct. I think you need
+- 结果集结构体
 
         type Result struct {
         	*sql.Rows
