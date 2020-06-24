@@ -17,7 +17,7 @@
 
         import _ "github.com/XHXHXHX/go-mysql/mysqlManager"
     
-        InitConfig()
+        InitConfig('config.json')
         SetPrefix("my_")
         
         res, err := DB().Table("user").Where("age", ">", 0).OrderBy("age").GroupBy("id").Offset(0).Limit(10).Get()
