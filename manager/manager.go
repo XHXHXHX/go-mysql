@@ -1,4 +1,4 @@
-package mysqlManager
+package manager
 
 import (
 	"database/sql"

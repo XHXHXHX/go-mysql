@@ -15,7 +15,7 @@
         
 - 简易查询
 
-        import _ "github.com/XHXHXHX/go-mysql"
+        import _ "github.com/XHXHXHX/go-mysql/mysqlManger"
     
         InitConfig()
         SetPrefix("my_")

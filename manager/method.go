@@ -1,4 +1,4 @@
-package mysqlManager
+package manager
 
 import "go-mysql/sql_generators"
 
