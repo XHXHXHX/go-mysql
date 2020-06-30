@@ -1,4 +1,4 @@
-module go-mysql
+module github.com/XHXHXHX/go-mysql
 
 go 1.14
 

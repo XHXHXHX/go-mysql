@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"go-mysql/pool"
-	"go-mysql/result"
-	"go-mysql/sql_generators"
+	"github.com/XHXHXHX/go-mysql/pool"
+	"github.com/XHXHXHX/go-mysql/result"
+	"github.com/XHXHXHX/go-mysql/sql_generators"
 	"strconv"
 )
 

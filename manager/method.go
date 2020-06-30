@@ -1,6 +1,6 @@
 package manager
 
-import "go-mysql/sql_generators"
+import "github.com/XHXHXHX/go-mysql/sql_generators"
 
 func SetPrefix(s string) {
 	sql_generators.SetPrefix(s)
