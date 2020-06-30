@@ -7,8 +7,8 @@
     
     "Host" :	"127.0.0.1",
     "Port" :	3306,
-    "Username" : "myMysql",
-    "Passwd" :	"myMysql@XHXHX22",
+    "Username" : "root",
+    "Passwd" :	"xhxhx",
     "DBName" : "blog",
     "Prifex" : "blog_"
 }

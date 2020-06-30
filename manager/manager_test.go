@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"go-mysql/sql_generators"
+	"github.com/XHXHXHX/go-mysql/sql_generators"
 	"testing"
 )
 
@@ -197,6 +197,9 @@ func TestManager_Models(t *testing.T) {
 	}
 }
 func TestManager_Count(t *testing.T) {
+	if isInit == false {
+		TestInitConfig(t)
+	}
 	// 3
 	res, err := DB().Table("user").Where("age", ">", 1).Count()
 	if err != nil {
@@ -341,14 +344,14 @@ func TestDB(t *testing.T) {
 }
 
 // TODO
-func TestDeBug(t *testing.T) {
-	if isInit == false {
-		TestInitConfig(t)
-	}
-	// SELECT count(id) as count, age FROM `my_user` GROUP BY age HAVING `my_user`.`count` > 1
-	res, err := DB().Table("user").GroupBy("age").SelectRaw("count(id) as count, age").Having("count", ">", 1).Get()
-	if err != nil {
-		t.Log(res.Generator.ShowSql)
-		t.Error(err)
-	}
-}
+//func TestDeBug(t *testing.T) {
+//	if isInit == false {
+//		TestInitConfig(t)
+//	}
+//	// SELECT count(id) as count, age FROM `my_user` GROUP BY age HAVING `my_user`.`count` > 1
+//	res, err := DB().Table("user").GroupBy("age").SelectRaw("count(id) as count, age").Having("count", ">", 1).Get()
+//	if err != nil {
+//		t.Log(res.Generator.ShowSql)
+//		t.Error(err)
+//	}
+//}
