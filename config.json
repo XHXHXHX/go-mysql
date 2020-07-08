@@ -10,5 +10,5 @@
   "Username" : "root",
   "Password" : "root",
   "DBName" : "test",
-  "Prifex" : "my_"
+  "Prefix" : "my_"
 }
