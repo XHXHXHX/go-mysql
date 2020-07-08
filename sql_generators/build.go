@@ -74,12 +74,20 @@ func (this *SqlGenerator) setShowSql(params []interface{}) {
 
 	for _, value := range params {
 		switch val := value.(type) {
-			case string:
-				this.ShowSql = strings.Replace(this.ShowSql, "?", AddSingleSymbol(val), 1)
-			case int:
-				this.ShowSql = strings.Replace(this.ShowSql, "?", strconv.Itoa(val), 1)
-			default:
-				panic("param error")
+		case string:
+			this.ShowSql = strings.Replace(this.ShowSql, "?", AddSingleSymbol(val), 1)
+		case int:
+			this.ShowSql = strings.Replace(this.ShowSql, "?", strconv.Itoa(val), 1)
+		case int8:
+			this.ShowSql = strings.Replace(this.ShowSql, "?", strconv.FormatInt(int64(val), 10), 1)
+		case int32:
+			this.ShowSql = strings.Replace(this.ShowSql, "?", strconv.FormatInt(int64(val), 10), 1)
+		case int64:
+			this.ShowSql = strings.Replace(this.ShowSql, "?", strconv.FormatInt(val, 10), 1)
+		case uint64:
+			this.ShowSql = strings.Replace(this.ShowSql, "?", strconv.FormatUint(val, 10), 1)
+		default:
+			panic("param error")
 		}
 		this.ExeParam = append(this.ExeParam, value)
 	}
