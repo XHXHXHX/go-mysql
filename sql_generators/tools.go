@@ -22,7 +22,7 @@ func FormatWhereParam(args... interface{}) []interface{} {
 		case int:
 			new_args = append(new_args, val)
 		default:
-			panic("Where param error")
+			new_args = append(new_args, val)
 		}
 	}
 
