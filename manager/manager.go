@@ -144,34 +144,34 @@ func (manage *Manager) First() (map[string]interface{}, error) {
 	return res.Set[0], nil
 }
 
-func (manage *Manager) Model(model interface{}) (string, error) {
+func (manage *Manager) Model(model interface{}) (*Manager, error) {
 	manage.Generator.First()
 	res, err := manage.query()
 	if err != nil {
-		return manage.Generator.ShowSql, err
+		return manage, err
 	}
 	if len(res.Set) == 0 {
-		return manage.Generator.ShowSql, nil
+		return manage, nil
 	}
 
 	res.MapResult(&model)
 
-	return nil
+	return manage, nil
 }
 
-func (manage *Manager) Models(model interface{}) (string, error) {
+func (manage *Manager) Models(model interface{}) (*Manager, error) {
 	manage.Generator.Get()
 	res, err := manage.query()
 	if err != nil {
-		return manage.Generator.ShowSql, err
+		return manage, err
 	}
 	if len(res.Set) == 0 {
-		return manage.Generator.ShowSql, nil
+		return manage, nil
 	}
 
 	res.MapResults(&model)
 
-	return manage.Generator.ShowSql, nil
+	return manage, nil
 }
 
 func (manage *Manager) PluckArray(field string) ([]interface{}, error) {
