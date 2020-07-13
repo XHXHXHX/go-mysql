@@ -17,6 +17,7 @@ const DEFAULT_CONFIG = "config/mysql.json"
  */
 type Manager struct {
 	Generator *sql_generators.SqlGenerator
+	ExecuteSql string
 	client    *sql.DB
 	tx        *sql.Tx
 	*result.Result
@@ -143,14 +144,14 @@ func (manage *Manager) First() (map[string]interface{}, error) {
 	return res.Set[0], nil
 }
 
-func (manage *Manager) Model(model interface{}) error {
+func (manage *Manager) Model(model interface{}) (string, error) {
 	manage.Generator.First()
 	res, err := manage.query()
 	if err != nil {
-		return errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
+		return manage.Generator.ShowSql, err
 	}
 	if len(res.Set) == 0 {
-		return nil
+		return manage.Generator.ShowSql, nil
 	}
 
 	res.MapResult(&model)
@@ -158,19 +159,19 @@ func (manage *Manager) Model(model interface{}) error {
 	return nil
 }
 
-func (manage *Manager) Models(model interface{}) error {
+func (manage *Manager) Models(model interface{}) (string, error) {
 	manage.Generator.Get()
 	res, err := manage.query()
 	if err != nil {
-		return errors.New(err.Error() + ", sql: " + manage.Generator.ShowSql)
+		return manage.Generator.ShowSql, err
 	}
 	if len(res.Set) == 0 {
-		return nil
+		return manage.Generator.ShowSql, nil
 	}
 
 	res.MapResults(&model)
 
-	return nil
+	return manage.Generator.ShowSql, nil
 }
 
 func (manage *Manager) PluckArray(field string) ([]interface{}, error) {
